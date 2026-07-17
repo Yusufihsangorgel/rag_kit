@@ -1,3 +1,7 @@
+## 0.1.2
+
+- Docs: tightened the README wording and visuals.
+
 ## 0.1.1
 
 - Expand the package description to name what the package does in the

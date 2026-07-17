@@ -4,11 +4,10 @@ version: 0.1.2
 repository: https://github.com/Yusufihsangorgel/rag_kit
 topics:
   - rag
-  - embeddings
-  - vector-search
-  - ai
-  - llm
   - retrieval
+  - embeddings
+  - llm
+  - nlp
 
 environment:
   sdk: ^3.8.0

@@ -251,4 +251,56 @@ void main() {
       expect(await retriever.buildContext('cat'), isEmpty);
     });
   });
+
+  group('re-adding a source', () {
+    test('removes chunks left over from the previous version', () async {
+      final embedder = KeywordEmbedder(['one', 'two', 'three']);
+      final store = InMemoryVectorStore();
+      final retriever = Retriever(
+        embedder: embedder.call,
+        store: store,
+        chunker: Chunker.fixed(maxChars: 12, overlap: 0),
+      );
+      await retriever.addText('one and two and three', sourceId: 'doc');
+      final before = await store.count();
+      expect(before, greaterThan(1));
+
+      await retriever.addText('one', sourceId: 'doc');
+      expect(await store.count(), 1);
+
+      final results = await retriever.retrieve('three', topK: 5);
+      for (final result in results) {
+        expect(result.document.text, isNot(contains('three')));
+      }
+    });
+
+    test('does not touch other sources', () async {
+      final embedder = KeywordEmbedder(['alpha', 'beta']);
+      final store = InMemoryVectorStore();
+      final retriever = Retriever(embedder: embedder.call, store: store);
+      await retriever.addText('alpha', sourceId: 'a');
+      await retriever.addText('beta', sourceId: 'b');
+      await retriever.addText('alpha again', sourceId: 'a');
+      final results = await retriever.retrieve('beta', topK: 5);
+      expect(results.first.document.metadata['sourceId'], 'b');
+    });
+  });
+
+  group('buildContext validation', () {
+    test('rejects a non-positive maxChars', () async {
+      final embedder = KeywordEmbedder(['x']);
+      final retriever = Retriever(
+        embedder: embedder.call,
+        store: InMemoryVectorStore(),
+      );
+      await expectLater(
+        retriever.buildContext('x', maxChars: 0),
+        throwsArgumentError,
+      );
+      await expectLater(
+        retriever.buildContext('x', maxChars: -5),
+        throwsArgumentError,
+      );
+    });
+  });
 }

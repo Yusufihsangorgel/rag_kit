@@ -29,13 +29,17 @@ class Retriever {
   /// upserts them into [store].
   ///
   /// Documents get the id `'$sourceId#<chunkIndex>'`. When [sourceId] is
-  /// omitted, an id of the form `text-<n>` is generated; pass an explicit
-  /// [sourceId] when you need stable ids, for example to overwrite a
-  /// re-added document instead of duplicating it.
+  /// omitted, an id of the form `text-<n>` is generated (avoid handing out
+  /// your own ids of that form, or they can collide with generated ones);
+  /// pass an explicit [sourceId] when you need stable ids. Re-adding a text
+  /// under the same [sourceId] replaces it completely: chunks left over
+  /// from the previous version are removed before the new ones are stored.
   ///
   /// [metadata] is copied onto every produced document. The keys
   /// `sourceId`, `chunkIndex`, `chunkStart`, and `chunkEnd` are reserved
-  /// and always overwritten with the chunk's position information.
+  /// and always overwritten with the chunk's position information; keys
+  /// set by a custom [Chunker] on its chunks take precedence over
+  /// [metadata] entries with the same name.
   ///
   /// Does nothing (and does not call the embedder) when [text] chunks to
   /// nothing, for example when it is empty or whitespace. Throws a
@@ -55,6 +59,11 @@ class Retriever {
         '${chunks.length} texts.',
       );
     }
+    // Remove chunks of a previous version of this source only after the
+    // embedder succeeded, so a failed re-add never destroys existing data.
+    await store.removeWhere(
+      (document) => document.metadata['sourceId'] == source,
+    );
     final documents = <Document>[
       for (var i = 0; i < chunks.length; i++)
         Document(
@@ -109,6 +118,9 @@ class Retriever {
     int? maxChars,
     String separator = '\n\n---\n\n',
   }) async {
+    if (maxChars != null && maxChars < 1) {
+      throw ArgumentError.value(maxChars, 'maxChars', 'must be at least 1');
+    }
     final results = await retrieve(query, topK: topK);
     final buffer = StringBuffer();
     for (final result in results) {

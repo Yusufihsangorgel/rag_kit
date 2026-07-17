@@ -17,8 +17,13 @@ export 'rag_kit.dart';
 /// format described at [InMemoryVectorStore.toBytes].
 extension InMemoryVectorStoreFiles on InMemoryVectorStore {
   /// Writes the store to the file at [path], overwriting it if it exists.
+  ///
+  /// The write goes to a temporary file that is renamed into place, so a
+  /// crash mid-write cannot destroy a previously saved index.
   Future<void> save(String path) async {
-    await File(path).writeAsBytes(toBytes());
+    final temp = File('$path.tmp.$pid');
+    await temp.writeAsBytes(toBytes());
+    await temp.rename(path);
   }
 
   /// Reads a store previously written with [save].

@@ -157,9 +157,10 @@ filter.
 
 Search is exact, not approximate: every stored vector is scored on every
 query. That is the honest trade-off of this release. Exact search is
-deterministic and has no index build cost, and for corpora in the
-10k to 100k chunk range a query is a few milliseconds of dot products.
-Beyond that scale you want an ANN index, which is on the roadmap below.
+deterministic and has no index build cost. Measured medians with 768-dim
+embeddings and `topK: 5` on an Apple M-series laptop: about 5 ms per
+query at 10k chunks, about 50 ms at 100k. Beyond that scale you want an
+ANN index, which is on the roadmap below.
 
 The `VectorStore` interface is asynchronous and small (`upsert`, `search`,
 `removeWhere`, `count`, `clear`), so a database-backed implementation can
@@ -196,7 +197,10 @@ per document:
   dimension x 4 bytes                embedding as float32
 ```
 
-Corrupt or truncated files fail with a `FormatException`. Document
+Corrupt or truncated files fail with a `FormatException`; there is no
+checksum, so single flipped bits inside embedding data are not detected.
+The magic bytes version the format: a future incompatible layout will use
+a different magic and this release will reject it cleanly. Document
 metadata must be JSON-encodable for saving.
 
 ## Limits
@@ -215,6 +219,7 @@ metadata must be JSON-encodable for saving.
 - Reranking hooks.
 - PDF and HTML loaders.
 - Embedding quantization.
+- A checksum in the persistence format.
 
 ## License
 

@@ -297,4 +297,58 @@ void main() {
       expect(() => Chunker.sentences(overlap: -1), throwsArgumentError);
     });
   });
+
+  group('surrogate pairs at cut points', () {
+    test('hard cuts never split an emoji', () {
+      // 't' + emoji repeated: no whitespace, so every window is a hard cut.
+      final source = List.filled(300, 't\u{1F600}').join();
+      for (final chunker in [
+        Chunker.fixed(maxChars: 7, overlap: 0),
+        Chunker.fixed(maxChars: 8, overlap: 3),
+        Chunker.paragraphs(maxChars: 9),
+      ]) {
+        final chunks = chunker.chunk(source);
+        expectOffsetsMatch(source, chunks);
+        for (final chunk in chunks) {
+          final units = chunk.text.codeUnits;
+          expect(
+            units.first & 0xFC00,
+            isNot(0xDC00),
+            reason: 'chunk starts with an orphan low surrogate',
+          );
+          expect(
+            units.last & 0xFC00,
+            isNot(0xD800),
+            reason: 'chunk ends with an orphan high surrogate',
+          );
+        }
+      }
+    });
+
+    test('CJK text with an emoji survives a store roundtrip', () async {
+      final cjk = '\u6c49\u5b57' * 40;
+      final source = '$cjk\u{1F680}$cjk';
+      final chunks = Chunker.fixed(maxChars: 50, overlap: 10).chunk(source);
+      final store = InMemoryVectorStore();
+      await store.upsert([
+        for (var i = 0; i < chunks.length; i++)
+          Document(
+            id: 'c$i',
+            text: chunks[i].text,
+            embedding: [i.toDouble(), 1],
+            metadata: const {},
+          ),
+      ]);
+      final restored = InMemoryVectorStore.fromBytes(store.toBytes());
+      final results = await restored.search([0, 1], topK: chunks.length);
+      final byId = {for (final r in results) r.document.id: r.document.text};
+      for (var i = 0; i < chunks.length; i++) {
+        expect(
+          byId['c$i'],
+          chunks[i].text,
+          reason: 'persisted text changed for chunk $i',
+        );
+      }
+    });
+  });
 }

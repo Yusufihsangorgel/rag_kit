@@ -67,6 +67,14 @@ class InMemoryVectorStore extends VectorStore {
         );
       }
       final embedding = reader.readFloat32List(dimension);
+      for (var i = 0; i < embedding.length; i++) {
+        if (!embedding[i].isFinite) {
+          throw FormatException(
+            'Invalid vector store: non-finite embedding component in '
+            'document "$id".',
+          );
+        }
+      }
       store._insert(
         Document(id: id, text: text, embedding: embedding, metadata: decoded),
       );
@@ -81,6 +89,11 @@ class InMemoryVectorStore extends VectorStore {
     }
     return store;
   }
+
+  /// The largest finite float32 value. Finite doubles beyond this would
+  /// silently overflow to infinity when stored as float32, so they are
+  /// rejected up front together with NaN and infinity.
+  static const double _maxFloat32 = 3.4028234663852886e38;
 
   // Serialization format "RGK1", see toBytes.
   static const int _magic0 = 0x52; // R
@@ -115,6 +128,16 @@ class InMemoryVectorStore extends VectorStore {
         );
       }
       dimension ??= length;
+      for (var i = 0; i < length; i++) {
+        final value = document.embedding[i];
+        if (!value.isFinite || value.abs() > _maxFloat32) {
+          throw ArgumentError(
+            'Document "${document.id}" has an embedding component that is '
+            'not representable as a finite float32: $value at index $i. '
+            'A NaN or infinite score would corrupt every search ranking.',
+          );
+        }
+      }
     }
     for (final document in documents) {
       _insert(document);
@@ -139,6 +162,15 @@ class InMemoryVectorStore extends VectorStore {
         'Query has ${query.length} dimensions, but the store holds '
         '$dimension-dimensional embeddings.',
       );
+    }
+    for (var i = 0; i < query.length; i++) {
+      final value = query[i];
+      if (!value.isFinite || value.abs() > _maxFloat32) {
+        throw ArgumentError(
+          'Query has a component that is not representable as a finite '
+          'float32: $value at index $i.',
+        );
+      }
     }
     final queryVector = Float64List.fromList(query);
     var querySumSquares = 0.0;

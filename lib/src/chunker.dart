@@ -15,6 +15,15 @@ bool _isSpace(int codeUnit) =>
 bool _isTerminator(int codeUnit) =>
     codeUnit == _dot || codeUnit == _bang || codeUnit == _question;
 
+/// Whether cutting [text] at [position] would separate a UTF-16 surrogate
+/// pair, corrupting the character (an emoji, for example) on both sides.
+bool _splitsSurrogatePair(String text, int position) {
+  if (position <= 0 || position >= text.length) return false;
+  final before = text.codeUnitAt(position - 1);
+  final at = text.codeUnitAt(position);
+  return (before & 0xFC00) == 0xD800 && (at & 0xFC00) == 0xDC00;
+}
+
 /// Splits a source text into [Chunk]s.
 ///
 /// Implement this to plug a custom splitting strategy into [Retriever], or
@@ -29,8 +38,9 @@ abstract class Chunker {
   /// Produces chunks of at most [maxChars] characters. Consecutive chunks
   /// share roughly [overlap] characters so that a sentence cut in half by a
   /// window edge is still fully present in one of the two chunks. Cut points
-  /// move back to the nearest whitespace, so words are not split unless a
-  /// single word is longer than [maxChars], in which case it is cut mid-word.
+  /// move back to the nearest ASCII whitespace, so words are not split
+  /// unless a single word is longer than [maxChars], in which case it is
+  /// cut mid-word (never inside a UTF-16 surrogate pair).
   ///
   /// Throws an [ArgumentError] if [maxChars] is less than 1, [overlap] is
   /// negative, or [overlap] is not smaller than [maxChars].
@@ -118,6 +128,12 @@ class _FixedChunker extends Chunker {
           end = i;
         } else {
           hardCut = true;
+          // A mid-word cut may land inside a surrogate pair; keep the pair
+          // whole. Growing by one is safe: the pair's second half is within
+          // the text, and soft cuts always land on whitespace.
+          if (_splitsSurrogatePair(text, end)) {
+            end = end - 1 > start ? end - 1 : end + 1;
+          }
         }
       }
       var chunkEnd = end;
@@ -146,7 +162,10 @@ class _FixedChunker extends Chunker {
     }
     if (hardCut) {
       // The current window is a single oversized word; continue cutting it
-      // mid-word.
+      // mid-word, but never in the middle of a surrogate pair.
+      if (_splitsSurrogatePair(text, next)) {
+        next = next - 1 > start ? next - 1 : next + 1;
+      }
       return next;
     }
     if (!_isSpace(text.codeUnitAt(next)) &&

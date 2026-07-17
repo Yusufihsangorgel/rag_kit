@@ -310,4 +310,42 @@ void main() {
       expect(store.dimension, 3);
     });
   });
+
+  group('non-finite embedding guards', () {
+    test('rejects NaN, infinity, and float32-overflowing components', () async {
+      final store = InMemoryVectorStore();
+      for (final bad in [double.nan, double.infinity, -double.infinity, 1e39]) {
+        await expectLater(
+          store.upsert([
+            doc('bad', [bad, 0]),
+          ]),
+          throwsArgumentError,
+          reason: 'component $bad must be rejected',
+        );
+      }
+      expect(await store.count(), 0);
+    });
+
+    test('rejects non-finite query components', () async {
+      final store = InMemoryVectorStore();
+      await store.upsert([
+        doc('a', [1, 0]),
+      ]);
+      for (final bad in [double.nan, double.infinity, 1e39]) {
+        await expectLater(store.search([bad, 0]), throwsArgumentError);
+      }
+    });
+
+    test('a rejected batch writes nothing', () async {
+      final store = InMemoryVectorStore();
+      await expectLater(
+        store.upsert([
+          doc('ok', [1, 0]),
+          doc('bad', [double.nan, 0]),
+        ]),
+        throwsArgumentError,
+      );
+      expect(await store.count(), 0);
+    });
+  });
 }

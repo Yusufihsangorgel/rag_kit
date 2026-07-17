@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="440" viewBox="0 0 1180 440" font-family="Menlo, monospace">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#38BDF8"/></marker>
+    <marker id="g" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#64748B"/></marker>
+  </defs>
+  <rect width="1180" height="440" fill="#0B1220"/>
+  <text x="44" y="46" font-size="22" font-weight="bold" fill="#E2E8F0">The rag_kit pipeline</text>
+  <text x="44" y="72" font-size="14" fill="#94A3B8">One Retriever ties a chunker, your embedder, and a vector store together. Two paths share them.</text>
+
+  <!-- INDEX lane -->
+  <text x="44" y="120" font-size="13" fill="#64748B">INDEX  ·  addText(document)</text>
+  <rect x="44" y="132" width="150" height="56" rx="8" fill="#0E1A2E" stroke="#1E3A5F"/><text x="60" y="158" font-size="14" fill="#E2E8F0">document</text><text x="60" y="176" font-size="12" fill="#94A3B8">any text</text>
+  <rect x="240" y="132" width="150" height="56" rx="8" fill="#111C2E" stroke="#38BDF8"/><text x="256" y="158" font-size="14" fill="#E2E8F0">Chunker</text><text x="256" y="176" font-size="12" fill="#94A3B8">paras / sentences</text>
+  <rect x="436" y="132" width="170" height="56" rx="8" fill="#111C2E" stroke="#38BDF8"/><text x="452" y="158" font-size="14" fill="#E2E8F0">embedder (batch)</text><text x="452" y="176" font-size="12" fill="#94A3B8">bring your own</text>
+  <path d="M194 160 L240 160" stroke="#38BDF8" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M390 160 L436 160" stroke="#38BDF8" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M606 160 L700 160 L700 196" stroke="#38BDF8" stroke-width="2" fill="none" marker-end="url(#a)"/>
+
+  <!-- shared store -->
+  <rect x="628" y="196" width="150" height="66" rx="8" fill="#0E1A2E" stroke="#38BDF8"/><text x="644" y="224" font-size="14" fill="#E2E8F0">VectorStore</text><text x="644" y="244" font-size="12" fill="#94A3B8">vectors + chunks</text>
+
+  <!-- embedder shared note -->
+  <rect x="436" y="290" width="170" height="42" rx="8" fill="#0E1A2E" stroke="#1E3A5F" stroke-dasharray="4 3"/><text x="452" y="316" font-size="12.5" fill="#94A3B8">Ollama / OpenAI / any</text>
+
+  <!-- QUERY lane -->
+  <text x="44" y="300" font-size="13" fill="#64748B">QUERY  ·  retrieve(q) / buildContext(q)</text>
+  <rect x="44" y="312" width="150" height="56" rx="8" fill="#0E1A2E" stroke="#1E3A5F"/><text x="60" y="338" font-size="14" fill="#E2E8F0">query</text><text x="60" y="356" font-size="12" fill="#94A3B8">a question</text>
+  <path d="M194 340 L436 340 L521 332" stroke="#64748B" stroke-width="1.8" fill="none" marker-end="url(#g)"/>
+  <path d="M606 316 L628 300 L690 300 L700 262" stroke="#38BDF8" stroke-width="2" fill="none" marker-end="url(#a)"/>
+  <rect x="820" y="196" width="170" height="66" rx="8" fill="#111C2E" stroke="#38BDF8"/><text x="836" y="224" font-size="14" fill="#E2E8F0">top-K ScoredChunks</text><text x="836" y="244" font-size="12" fill="#94A3B8">cosine similarity</text>
+  <path d="M778 229 L820 229" stroke="#38BDF8" stroke-width="2" marker-end="url(#a)"/>
+  <rect x="820" y="300" width="280" height="56" rx="8" fill="#0E1A2E" stroke="#1E3A5F"/><text x="836" y="326" font-size="14" fill="#E2E8F0">buildContext -> your LLM prompt</text><text x="836" y="344" font-size="12" fill="#94A3B8">ranked chunks, ready to paste</text>
+  <path d="M905 262 L905 300" stroke="#38BDF8" stroke-width="2" marker-end="url(#a)"/>
+
+  <text x="44" y="418" font-size="12.5" fill="#64748B">The whole pipeline is testable with a fake embedder. No vendor is hard-wired.</text>
+</svg>

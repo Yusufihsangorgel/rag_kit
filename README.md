@@ -16,6 +16,8 @@ that turns a batch of texts into vectors, and everything else works with
 it. That keeps the package independent of any provider SDK and makes the
 whole pipeline testable with a fake embedder.
 
+![The rag_kit pipeline: chunk, embed and store on the way in; embed, search and build context on the way out](doc/architecture.png)
+
 ## Quick start
 
 ```dart

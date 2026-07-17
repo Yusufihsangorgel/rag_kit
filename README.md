@@ -1,5 +1,7 @@
 # rag_kit
 
+![rag_kit banner](doc/banner.png)
+
 Retrieval-augmented generation for Dart: chunking, embeddings, vector
 search, and context building. Bring your own embedding model.
 

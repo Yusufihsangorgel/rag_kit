@@ -1,0 +1,6 @@
+# Dart tooling
+.dart_tool/
+build/
+
+# Omit committing pubspec.lock for library packages.
+pubspec.lock

@@ -1,0 +1,17 @@
+name: rag_kit
+description: "Retrieval-augmented generation for Dart: chunking, embeddings, vector search, and context building. Bring your own embedding model."
+version: 0.1.0
+repository: https://github.com/Yusufihsangorgel/rag_kit
+topics:
+  - rag
+  - embeddings
+  - vector-search
+  - ai
+  - llm
+
+environment:
+  sdk: ^3.8.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.0

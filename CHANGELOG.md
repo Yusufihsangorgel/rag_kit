@@ -1,3 +1,7 @@
+## 0.1.4
+
+- Docs: sharpen the pub.dev description to lead with the value and the terms people search.
+
 ## 0.1.3
 
 - `Retriever.retrieve` now takes a `where` predicate, and `buildContext` now

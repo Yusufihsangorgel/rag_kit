@@ -86,11 +86,17 @@ class Retriever {
   /// Embeds [query] and returns the most similar stored chunks, best first.
   ///
   /// Returns an empty list without calling the embedder when the store is
-  /// empty. See [VectorStore.search] for [topK] and [minScore].
+  /// empty. See [VectorStore.search] for [topK], [minScore] and [where].
+  ///
+  /// [where] restricts the search to documents for which it returns true, using
+  /// each document's [Document.metadata]. It runs before scoring, so filtered
+  /// documents cost no similarity computation. Use it to scope a query to one
+  /// source, language, tenant, or any metadata field you set when adding text.
   Future<List<ScoredChunk>> retrieve(
     String query, {
     int topK = 5,
     double? minScore,
+    bool Function(Document document)? where,
   }) async {
     if (await store.count() == 0) return const [];
     final embeddings = await embedder([query]);
@@ -99,7 +105,12 @@ class Retriever {
         'Embedder returned ${embeddings.length} embeddings for 1 text.',
       );
     }
-    return store.search(embeddings.first, topK: topK, minScore: minScore);
+    return store.search(
+      embeddings.first,
+      topK: topK,
+      minScore: minScore,
+      where: where,
+    );
   }
 
   /// Retrieves the chunks most relevant to [query] and joins their texts
@@ -112,16 +123,22 @@ class Retriever {
   /// so the result is never empty when there are results. Chunks arrive in
   /// relevance order, so what gets dropped is always the least relevant
   /// tail.
+  ///
+  /// [minScore] and [where] are forwarded to [retrieve], so the context can be
+  /// scored-thresholded and metadata-filtered the same way.
   Future<String> buildContext(
     String query, {
     int topK = 5,
     int? maxChars,
     String separator = '\n\n---\n\n',
+    double? minScore,
+    bool Function(Document document)? where,
   }) async {
     if (maxChars != null && maxChars < 1) {
       throw ArgumentError.value(maxChars, 'maxChars', 'must be at least 1');
     }
-    final results = await retrieve(query, topK: topK);
+    final results =
+        await retrieve(query, topK: topK, minScore: minScore, where: where);
     final buffer = StringBuffer();
     for (final result in results) {
       final text = result.document.text;

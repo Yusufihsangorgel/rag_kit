@@ -182,6 +182,27 @@ void main() {
         expect(embedder.calls, 0);
       },
     );
+
+    test('where restricts retrieval to matching document metadata', () async {
+      final embedder = KeywordEmbedder(['dog']);
+      final store = InMemoryVectorStore();
+      final retriever = Retriever(embedder: embedder.call, store: store);
+      await retriever.addText('the dog barks', sourceId: 'a');
+      await retriever.addText('the dog runs', sourceId: 'b');
+
+      // Without a filter the best match could come from either source.
+      final all = await retriever.retrieve('dog', topK: 2);
+      expect(all, hasLength(2));
+
+      // Scoped to source a, only a's chunk can come back.
+      final scoped = await retriever.retrieve(
+        'dog',
+        where: (doc) => doc.metadata['sourceId'] == 'a',
+      );
+      expect(scoped, hasLength(1));
+      expect(scoped.single.document.metadata['sourceId'], 'a');
+      expect(scoped.single.document.text, 'the dog barks');
+    });
   });
 
   group('Retriever.buildContext', () {
@@ -249,6 +270,22 @@ void main() {
         store: InMemoryVectorStore(),
       );
       expect(await retriever.buildContext('cat'), isEmpty);
+    });
+
+    test('where filters the context to matching documents', () async {
+      final embedder = KeywordEmbedder(['dog']);
+      final retriever = Retriever(
+        embedder: embedder.call,
+        store: InMemoryVectorStore(),
+      );
+      await retriever.addText('the dog barks', sourceId: 'a');
+      await retriever.addText('the dog runs', sourceId: 'b');
+
+      final context = await retriever.buildContext(
+        'dog',
+        where: (doc) => doc.metadata['sourceId'] == 'b',
+      );
+      expect(context, 'the dog runs');
     });
   });
 

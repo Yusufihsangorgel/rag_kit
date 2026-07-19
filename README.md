@@ -44,8 +44,19 @@ Future<void> main() async {
     'how do I request leave?',
     maxChars: 4000,
   );
+
+  // Scope a query with a metadata filter: only chunks whose document metadata
+  // matches are scored, so you can restrict to one source, language or tenant.
+  final scoped = await retriever.retrieve(
+    'how do I request leave?',
+    where: (doc) => doc.metadata['sourceId'] == 'handbook',
+  );
 }
 ```
+
+`retrieve` and `buildContext` both take `minScore` and a `where` predicate,
+forwarded to the store, so filtering costs no similarity computation on the
+documents it excludes.
 
 A runnable version with a self-contained fake embedder is in
 `example/rag_kit_example.dart`.

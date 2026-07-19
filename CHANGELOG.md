@@ -1,3 +1,10 @@
+## 0.1.3
+
+- `Retriever.retrieve` now takes a `where` predicate, and `buildContext` now
+  takes both `minScore` and `where`, forwarded to the store. The metadata
+  filter and score threshold were already implemented in the store but could
+  not be reached through the retriever's public API.
+
 ## 0.1.2
 
 - Docs: tightened the README wording and visuals.

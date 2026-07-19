@@ -39,30 +39,50 @@ Future<void> main() async {
     chunker: Chunker.paragraphs(),
   );
 
+  // Two sources. Each addText is one document, chunked into paragraphs; give
+  // each document its own sourceId, or a later addText with a reused id would
+  // evict the earlier one's chunks.
   await retriever.addText('''
 Dart isolates do not share mutable memory. Each isolate has its own heap,
 and isolates exchange data by passing messages over ports.
 
-Sourdough bread needs a starter culture of wild yeast and bacteria. The
-dough ferments for hours, which develops both flavor and structure.
+Dart records are immutable and let a function return several values without
+a class. Pattern matching destructures them by position.
+''', sourceId: 'dart-guide');
+  await retriever.addText(
+    'Sourdough bread needs a starter culture of wild yeast and bacteria. '
+    'The dough ferments for hours, which develops flavor and structure.',
+    sourceId: 'cookbook',
+  );
 
-Coral reefs are built by colonies of tiny animals called polyps. The
-polyps secrete calcium carbonate, which forms the reef skeleton.
-''', sourceId: 'notes');
-
-  const query = 'How do Dart isolates exchange data?';
+  const query = 'How does Dart pass data between isolates?';
   print('Query: $query\n');
 
-  final results = await retriever.retrieve(query, topK: 3);
-  for (final result in results) {
-    final preview = result.document.text.split('\n').first;
-    print(
-      '${result.score.toStringAsFixed(3)}  ${result.document.id}  '
-      '$preview',
-    );
+  // Retrieval across every source.
+  print('All sources:');
+  for (final r in await retriever.retrieve(query, topK: 3)) {
+    print('  ${r.score.toStringAsFixed(3)}  ${r.document.id}');
   }
 
-  final context = await retriever.buildContext(query, topK: 2);
-  print('\nContext for the LLM prompt:\n');
+  // Scope the same query to one source with the metadata `where` filter, so
+  // documents from other sources never enter scoring. Use it for per-tenant,
+  // per-language or per-collection retrieval.
+  print('\nScoped to source "dart-guide":');
+  final scoped = await retriever.retrieve(
+    query,
+    topK: 3,
+    where: (doc) => doc.metadata['sourceId'] == 'dart-guide',
+  );
+  for (final r in scoped) {
+    print('  ${r.score.toStringAsFixed(3)}  ${r.document.id}');
+  }
+
+  // buildContext takes the same filter, returning a prompt-ready string.
+  final context = await retriever.buildContext(
+    query,
+    topK: 2,
+    where: (doc) => doc.metadata['sourceId'] == 'dart-guide',
+  );
+  print('\nContext for the LLM prompt (dart-guide only):\n');
   print(context);
 }

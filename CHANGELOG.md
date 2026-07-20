@@ -1,3 +1,15 @@
+## 0.2.0
+
+- Add `Retriever.retrieveDiverse`, maximal marginal relevance over a larger
+  candidate pool. Similarity alone returns near-duplicates when a source
+  repeats itself, so the context window pays for one fact several times while
+  the one that answers the question falls below the cut; this picks each next
+  chunk for its relevance minus how much it repeats what is already picked.
+  `lambda` runs from pure relevance (1.0, identical to `retrieve`) to pure
+  diversity (0.0), `fetchK` sets the candidate pool, and results keep their
+  query-similarity score. `buildContext` takes `diverse: true` to select the
+  same way.
+
 ## 0.1.4
 
 - Docs: sharpen the pub.dev description to lead with the value and the terms people search.

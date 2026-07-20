@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'chunker.dart';
 import 'document.dart';
 import 'embedder.dart';
@@ -113,6 +115,99 @@ class Retriever {
     );
   }
 
+  /// Retrieves chunks that are relevant to [query] and unlike each other.
+  ///
+  /// Plain [retrieve] returns the [topK] most similar chunks, and when a
+  /// source repeats itself those are often near-duplicates: the context window
+  /// fills with the same sentence three times while the fact that would have
+  /// answered the question sits just below the cut. This runs maximal marginal
+  /// relevance over a larger candidate pool, choosing each next chunk for how
+  /// relevant it is minus how much it repeats what is already chosen.
+  ///
+  /// [fetchK] is the pool pulled by similarity before the selection runs. It
+  /// defaults to four times [topK] and is raised to [topK] if smaller, since
+  /// the selection can only choose among what it is handed. [lambda] balances
+  /// the two halves: 1.0 is pure relevance and gives the same result as
+  /// [retrieve], 0.0 is pure diversity, and the default 0.5 splits it.
+  /// [minScore] and [where] are forwarded to the store exactly as in
+  /// [retrieve].
+  ///
+  /// Results keep their query-similarity score, not the internal selection
+  /// score, so they read the same as [retrieve]'s; they come back in selection
+  /// order, most relevant first.
+  ///
+  /// Throws [ArgumentError] if [topK] is below 1 or [lambda] is outside 0..1.
+  Future<List<ScoredChunk>> retrieveDiverse(
+    String query, {
+    int topK = 5,
+    int? fetchK,
+    double lambda = 0.5,
+    double? minScore,
+    bool Function(Document document)? where,
+  }) async {
+    if (topK < 1) {
+      throw ArgumentError.value(topK, 'topK', 'must be at least 1');
+    }
+    if (lambda < 0 || lambda > 1) {
+      throw ArgumentError.value(lambda, 'lambda', 'must be between 0 and 1');
+    }
+
+    final pool = fetchK == null ? topK * 4 : math.max(fetchK, topK);
+    final candidates = await retrieve(
+      query,
+      topK: pool,
+      minScore: minScore,
+      where: where,
+    );
+    if (candidates.length <= topK) return candidates;
+
+    final selected = <ScoredChunk>[];
+    final remaining = [...candidates];
+    while (selected.length < topK && remaining.isNotEmpty) {
+      var bestIndex = 0;
+      var bestScore = double.negativeInfinity;
+      for (var i = 0; i < remaining.length; i++) {
+        final candidate = remaining[i];
+        // How much this candidate repeats the closest chunk already chosen.
+        // Nothing is chosen on the first pass, so the term drops out and the
+        // most relevant candidate wins, as it should.
+        var repetition = 0.0;
+        if (selected.isNotEmpty) {
+          repetition = double.negativeInfinity;
+          for (final chosen in selected) {
+            final similarity = _cosine(
+              candidate.document.embedding,
+              chosen.document.embedding,
+            );
+            if (similarity > repetition) repetition = similarity;
+          }
+        }
+        final score = lambda * candidate.score - (1 - lambda) * repetition;
+        if (score > bestScore) {
+          bestScore = score;
+          bestIndex = i;
+        }
+      }
+      selected.add(remaining.removeAt(bestIndex));
+    }
+    return selected;
+  }
+
+  /// Cosine similarity between two embeddings, 0.0 when either is degenerate.
+  static double _cosine(List<double> a, List<double> b) {
+    if (a.length != b.length) return 0;
+    var dot = 0.0;
+    var normA = 0.0;
+    var normB = 0.0;
+    for (var i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+    if (normA == 0 || normB == 0) return 0;
+    return dot / (math.sqrt(normA) * math.sqrt(normB));
+  }
+
   /// Retrieves the chunks most relevant to [query] and joins their texts
   /// with [separator] into a single string, ready to paste into an LLM
   /// prompt.
@@ -126,6 +221,10 @@ class Retriever {
   ///
   /// [minScore] and [where] are forwarded to [retrieve], so the context can be
   /// scored-thresholded and metadata-filtered the same way.
+  ///
+  /// Set [diverse] to select the chunks with [retrieveDiverse] instead, which
+  /// keeps near-duplicates from eating the budget; [lambda] tunes that the
+  /// same way it does there and is ignored when [diverse] is false.
   Future<String> buildContext(
     String query, {
     int topK = 5,
@@ -133,12 +232,21 @@ class Retriever {
     String separator = '\n\n---\n\n',
     double? minScore,
     bool Function(Document document)? where,
+    bool diverse = false,
+    double lambda = 0.5,
   }) async {
     if (maxChars != null && maxChars < 1) {
       throw ArgumentError.value(maxChars, 'maxChars', 'must be at least 1');
     }
-    final results =
-        await retrieve(query, topK: topK, minScore: minScore, where: where);
+    final results = diverse
+        ? await retrieveDiverse(
+            query,
+            topK: topK,
+            lambda: lambda,
+            minScore: minScore,
+            where: where,
+          )
+        : await retrieve(query, topK: topK, minScore: minScore, where: where);
     final buffer = StringBuffer();
     for (final result in results) {
       final text = result.document.text;

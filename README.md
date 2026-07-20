@@ -58,6 +58,38 @@ Future<void> main() async {
 forwarded to the store, so filtering costs no similarity computation on the
 documents it excludes.
 
+## Diverse retrieval
+
+Similarity alone has a failure mode that shows up on any repetitive source. If
+a handbook says the same thing in three places, the three most similar chunks
+are near-copies of each other, so the context window pays for one fact three
+times while the fact that would have answered the question sits just below the
+cut.
+
+`retrieveDiverse` runs maximal marginal relevance over a larger candidate pool,
+choosing each next chunk for how relevant it is minus how much it repeats what
+is already chosen:
+
+```dart
+final results = await retriever.retrieveDiverse(
+  'how do I request leave?',
+  topK: 5,
+  lambda: 0.5, // 1.0 is pure relevance, 0.0 is pure diversity
+);
+
+// Or straight into a prompt:
+final context = await retriever.buildContext(
+  'how do I request leave?',
+  maxChars: 4000,
+  diverse: true,
+);
+```
+
+`fetchK` is the pool pulled by similarity before the selection runs, four times
+`topK` by default, since the selection can only choose among what it is handed.
+Results keep their query-similarity score and come back most relevant first, so
+they read like `retrieve`'s. `minScore` and `where` work the same.
+
 A runnable version with a self-contained fake embedder is in
 `example/rag_kit_example.dart`.
 
@@ -231,7 +263,7 @@ metadata must be JSON-encodable for saving.
 ## Planned
 
 - HNSW or another ANN index for larger corpora.
-- Reranking hooks.
+- Reranking hooks (a cross-encoder pass over the retrieved set).
 - PDF and HTML loaders.
 - Embedding quantization.
 - A checksum in the persistence format.

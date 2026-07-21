@@ -225,6 +225,13 @@ class Retriever {
   /// Set [diverse] to select the chunks with [retrieveDiverse] instead, which
   /// keeps near-duplicates from eating the budget; [lambda] tunes that the
   /// same way it does there and is ignored when [diverse] is false.
+  ///
+  /// [label] attaches a source marker to each chunk so the model can cite where
+  /// a passage came from. When given, each chunk is prefixed with the label it
+  /// returns and a newline, so `label: (c) => '[${c.document.metadata['sourceId']}]'`
+  /// turns a chunk into `[handbook]\n<text>`. The label counts against
+  /// [maxChars] like the rest of the chunk. Left null, the output is exactly
+  /// the joined chunk texts.
   Future<String> buildContext(
     String query, {
     int topK = 5,
@@ -234,6 +241,7 @@ class Retriever {
     bool Function(Document document)? where,
     bool diverse = false,
     double lambda = 0.5,
+    String Function(ScoredChunk chunk)? label,
   }) async {
     if (maxChars != null && maxChars < 1) {
       throw ArgumentError.value(maxChars, 'maxChars', 'must be at least 1');
@@ -250,20 +258,21 @@ class Retriever {
     final buffer = StringBuffer();
     for (final result in results) {
       final text = result.document.text;
+      final entry = label == null ? text : '${label(result)}\n$text';
       if (buffer.isEmpty) {
-        if (maxChars != null && text.length > maxChars) {
-          buffer.write(text.substring(0, maxChars));
+        if (maxChars != null && entry.length > maxChars) {
+          buffer.write(entry.substring(0, maxChars));
           break;
         }
-        buffer.write(text);
+        buffer.write(entry);
       } else {
         if (maxChars != null &&
-            buffer.length + separator.length + text.length > maxChars) {
+            buffer.length + separator.length + entry.length > maxChars) {
           break;
         }
         buffer
           ..write(separator)
-          ..write(text);
+          ..write(entry);
       }
     }
     return buffer.toString();

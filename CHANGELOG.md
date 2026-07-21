@@ -1,3 +1,12 @@
+## 0.3.0
+
+- Add a `label` callback to `buildContext`. Until now it joined only the raw
+  chunk texts, so the model got the passages with no way to say which document
+  each came from. Pass `label` to prefix every chunk with a source marker,
+  for example `label: (c) => '[${c.document.metadata['sourceId']}]'`; it counts
+  against `maxChars` like the rest of the chunk. Left off, the output is
+  byte-for-byte what it was before.
+
 ## 0.2.2
 
 - Shorten the screenshot description. pub.dev accepts up to 200 characters but

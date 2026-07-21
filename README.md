@@ -90,6 +90,27 @@ final context = await retriever.buildContext(
 Results keep their query-similarity score and come back most relevant first, so
 they read like `retrieve`'s. `minScore` and `where` work the same.
 
+## Citing sources
+
+By default `buildContext` joins the raw chunk texts, which leaves the model no
+way to say which document a passage came from. Pass a `label` to prefix each
+chunk with a source marker; it counts against `maxChars` like the rest of the
+chunk, and left off the output is exactly the joined texts.
+
+```dart
+final context = await retriever.buildContext(
+  'how do I request leave?',
+  maxChars: 4000,
+  label: (c) => '[${c.document.metadata['sourceId']}]',
+);
+// [handbook]
+// You request leave through the HR portal...
+```
+
+The label receives the `ScoredChunk`, so it can read `document.id`,
+`document.metadata`, or the `score`. Ask the model to keep the markers in its
+answer and you get citations back.
+
 A runnable version with a self-contained fake embedder is in
 `example/rag_kit_example.dart`.
 

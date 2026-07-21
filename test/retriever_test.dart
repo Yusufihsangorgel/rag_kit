@@ -272,6 +272,31 @@ void main() {
       expect(await retriever.buildContext('cat'), isEmpty);
     });
 
+    test('label prefixes each chunk with a recoverable source marker', () async {
+      final retriever = await pipeline(KeywordEmbedder(['cat', 'dog']));
+      final context = await retriever.buildContext(
+        'cat',
+        topK: 3,
+        label: (c) => '[${c.document.metadata['sourceId']}]',
+      );
+      expect(
+        context,
+        '[a]\ncat\n\n---\n\n[b]\ncat dog\n\n---\n\n[c]\ndog',
+      );
+      // The sources are recoverable from the built context.
+      final markers = RegExp(r'\[(\w+)\]')
+          .allMatches(context)
+          .map((m) => m.group(1))
+          .toList();
+      expect(markers, ['a', 'b', 'c']);
+    });
+
+    test('output is unchanged when no label is given', () async {
+      final retriever = await pipeline(KeywordEmbedder(['cat', 'dog']));
+      final labelled = await retriever.buildContext('cat', topK: 3);
+      expect(labelled, 'cat\n\n---\n\ncat dog\n\n---\n\ndog');
+    });
+
     test('where filters the context to matching documents', () async {
       final embedder = KeywordEmbedder(['dog']);
       final retriever = Retriever(

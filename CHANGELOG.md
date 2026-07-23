@@ -1,3 +1,29 @@
+## 0.4.0
+
+Settles how the public types compare, which is the last thing that has to be
+decided before a 1.0.0: adding or removing value equality afterwards silently
+changes how sets and maps behave for anyone already using them.
+
+- `Chunk` now has `==` and `hashCode`, over its text, its range, and its
+  metadata. Until now two chunks covering exactly the same span of the same
+  source were different objects, so `chunks.toSet()` never collapsed the
+  duplicates that overlapping windows produce, and a test could not compare a
+  chunker's output against the chunks it expected. Metadata is compared entry
+  by entry and each value with its own `==`, so a `List` or `Map` stored as a
+  metadata value compares by identity; the hash is order-independent, so two
+  equal maps built in a different order still land in the same bucket.
+- `Document` and `ScoredChunk` deliberately keep identity equality, and now
+  say so in their documentation. A store keeps embeddings as float32, so a
+  document read back has slightly different components than the one that was
+  written while being the same document: value equality would report those two
+  as different and would be wrong more often than it was useful. A document is
+  identified by its `id`, which is what the store already deduplicates on.
+- Name every export explicitly. The library re-exported whole source files,
+  so anything that became public inside one would have joined the API by
+  accident, which matters much more once the API is frozen. The exported set
+  is unchanged: `Chunk`, `Chunker`, `Document`, `Embedder`,
+  `InMemoryVectorStore`, `Retriever`, `ScoredChunk`, `VectorStore`.
+
 ## 0.3.1
 
 - Fix `InMemoryVectorStore` aliasing a document's `metadata` map instead of

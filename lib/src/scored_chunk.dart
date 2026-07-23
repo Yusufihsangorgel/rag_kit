@@ -1,6 +1,11 @@
 import 'document.dart';
 
 /// A search result: a stored document and its similarity to the query.
+///
+/// Like [Document], this has no value equality: it wraps a document, so it
+/// can only be as comparable as the document inside it. Results come back
+/// ranked, so compare `document.id` when you need to check which document a
+/// result points at.
 class ScoredChunk {
   /// Creates a scored result.
   ScoredChunk({required this.document, required this.score});

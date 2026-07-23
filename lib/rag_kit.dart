@@ -6,11 +6,11 @@
 /// `package:rag_kit/io.dart` instead.
 library;
 
-export 'src/chunk.dart';
-export 'src/chunker.dart';
-export 'src/document.dart';
-export 'src/embedder.dart';
-export 'src/in_memory_vector_store.dart';
-export 'src/retriever.dart';
-export 'src/scored_chunk.dart';
-export 'src/vector_store.dart';
+export 'src/chunk.dart' show Chunk;
+export 'src/chunker.dart' show Chunker;
+export 'src/document.dart' show Document;
+export 'src/embedder.dart' show Embedder;
+export 'src/in_memory_vector_store.dart' show InMemoryVectorStore;
+export 'src/retriever.dart' show Retriever;
+export 'src/scored_chunk.dart' show ScoredChunk;
+export 'src/vector_store.dart' show VectorStore;

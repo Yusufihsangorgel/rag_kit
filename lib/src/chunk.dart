@@ -28,6 +28,48 @@ class Chunk {
   /// chunkers.
   final Map<String, Object?> metadata;
 
+  /// Two chunks are equal when they carry the same text, cover the same
+  /// range, and have equal metadata.
+  ///
+  /// This is what makes `chunks.toSet()` collapse the duplicates that
+  /// overlapping windows produce, and what lets a test compare a chunker's
+  /// output against expected chunks directly.
+  ///
+  /// Metadata is compared entry by entry, and each value with its own `==`.
+  /// A `List` or `Map` stored as a metadata value therefore compares by
+  /// identity, not by content.
+  @override
+  bool operator ==(Object other) =>
+      other is Chunk &&
+      text == other.text &&
+      start == other.start &&
+      end == other.end &&
+      _metadataEquals(metadata, other.metadata);
+
+  @override
+  int get hashCode => Object.hash(text, start, end, _metadataHash(metadata));
+
+  static bool _metadataEquals(Map<String, Object?> a, Map<String, Object?> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      if (!b.containsKey(entry.key) || b[entry.key] != entry.value) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Combined with xor so the result does not depend on iteration order:
+  // two maps that are equal must hash the same however they were built.
+  static int _metadataHash(Map<String, Object?> map) {
+    var hash = 0;
+    for (final entry in map.entries) {
+      hash ^= Object.hash(entry.key, entry.value);
+    }
+    return hash;
+  }
+
   @override
   String toString() => 'Chunk($start..$end, ${text.length} chars)';
 }

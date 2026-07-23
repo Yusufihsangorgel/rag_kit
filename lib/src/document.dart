@@ -1,4 +1,12 @@
 /// A text passage stored in a vector store together with its embedding.
+///
+/// A document is identified by its [id], not by value: it deliberately does
+/// not define `==`, so two instances are equal only when they are the same
+/// object. Value equality would be misleading here, because a store keeps
+/// embeddings as float32 and a document read back therefore carries slightly
+/// different components than the one that was written, while being the same
+/// document. Compare [id] when you need to tell documents apart, and let the
+/// store deduplicate: upserting the same id replaces the stored document.
 class Document {
   /// Creates a document.
   ///

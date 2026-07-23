@@ -9,7 +9,7 @@ import 'vector_store.dart';
 /// Wires a [Chunker], an [Embedder], and a [VectorStore] into a retrieval
 /// pipeline: add texts once, then retrieve the passages most relevant to a
 /// query.
-class Retriever {
+final class Retriever {
   /// Creates a retriever.
   ///
   /// [chunker] defaults to `Chunker.fixed()`.

@@ -21,7 +21,7 @@ import 'vector_store.dart';
 /// [InMemoryVectorStore.fromBytes]. On the Dart VM and Flutter (not web),
 /// `package:rag_kit/io.dart` adds file-based `save` and `load` on top of
 /// these.
-class InMemoryVectorStore extends VectorStore {
+final class InMemoryVectorStore extends VectorStore {
   /// Creates an empty store.
   ///
   /// The embedding dimension is fixed by the first upserted document.

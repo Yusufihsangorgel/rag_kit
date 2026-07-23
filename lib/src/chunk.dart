@@ -3,14 +3,22 @@
 /// The offsets refer to the original string passed to `Chunker.chunk`, so
 /// `source.substring(chunk.start, chunk.end)` always equals [text]. This
 /// makes it possible to highlight retrieved passages in the source document.
-class Chunk {
+final class Chunk {
   /// Creates a chunk covering `[start, end)` in the source text.
+  ///
+  /// [metadata] is copied into an unmodifiable map, so a chunk's hash cannot
+  /// change under it: mutating the map you passed in afterwards does not reach
+  /// the chunk, and mutating the map you get back throws. Without that, a
+  /// chunk placed in a `Set` would be lost from it the moment the caller
+  /// touched the original map, since [hashCode] reads the metadata.
   Chunk({
     required this.text,
     required this.start,
     required this.end,
-    this.metadata = const {},
-  });
+    Map<String, Object?> metadata = const {},
+  }) : metadata = metadata.isEmpty
+           ? const {}
+           : Map<String, Object?>.unmodifiable(metadata);
 
   /// The chunk content.
   ///
@@ -26,6 +34,9 @@ class Chunk {
 
   /// Extra information attached by the chunker. Empty for the built-in
   /// chunkers.
+  ///
+  /// This is an unmodifiable copy of what was passed to the constructor;
+  /// writing to it throws.
   final Map<String, Object?> metadata;
 
   /// Two chunks are equal when they carry the same text, cover the same

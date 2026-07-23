@@ -1,3 +1,30 @@
+## 0.5.0
+
+- Fix a hazard that 0.4.0 introduced. Giving `Chunk` value equality made
+  `hashCode` read the metadata map, but the constructor still stored the
+  caller's map by reference, so a chunk could fall out of a `Set` that already
+  held it: put a chunk in a set, mutate the map you passed to its constructor,
+  and `set.contains(chunk)` is false for that very instance, with no error.
+  This is the same aliasing class that 0.3.1 fixed inside the store, arriving
+  through a different door. `Chunk` now copies metadata into an unmodifiable
+  map, so mutating the map you passed in cannot reach the chunk, and mutating
+  the map you get back throws instead of corrupting a hash. An empty map still
+  costs nothing.
+- Mark the five leaf classes `final`: `Chunk`, `Document`, `ScoredChunk`,
+  `InMemoryVectorStore` and `Retriever`. `Chunker` and `VectorStore` stay open,
+  because those are the documented extension points. Adding `final` cannot be
+  done after 1.0.0 without a major version, while removing it later is free,
+  and leaving a type with `==` open lets a subclass compare equal to its base
+  asymmetrically.
+- Stop promising, on the `VectorStore` interface, what only the in-memory
+  implementation can deliver. `search`'s documentation said it returns the
+  documents "most similar" to the query and that `where` "runs before scoring,
+  so filtered documents cost no similarity computation". Both are true of
+  `InMemoryVectorStore` and neither can be guaranteed by an approximate index,
+  which is the first item on this package's own roadmap. The interface now
+  describes what an implementation must do, and names `InMemoryVectorStore`
+  where the stronger guarantee actually holds.
+
 ## 0.4.0
 
 Settles how the public types compare, which is the last thing that has to be

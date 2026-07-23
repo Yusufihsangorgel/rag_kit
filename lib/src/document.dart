@@ -7,7 +7,7 @@
 /// different components than the one that was written, while being the same
 /// document. Compare [id] when you need to tell documents apart, and let the
 /// store deduplicate: upserting the same id replaces the stored document.
-class Document {
+final class Document {
   /// Creates a document.
   ///
   /// [embedding] must not be modified after the document is handed to a

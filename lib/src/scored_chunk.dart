@@ -6,7 +6,7 @@ import 'document.dart';
 /// can only be as comparable as the document inside it. Results come back
 /// ranked, so compare `document.id` when you need to check which document a
 /// result points at.
-class ScoredChunk {
+final class ScoredChunk {
   /// Creates a scored result.
   ScoredChunk({required this.document, required this.score});
 

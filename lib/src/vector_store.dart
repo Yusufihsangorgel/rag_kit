@@ -19,12 +19,19 @@ abstract class VectorStore {
   /// left unchanged.
   Future<void> upsert(List<Document> documents);
 
-  /// Returns up to [topK] documents most similar to [query], best first.
+  /// Returns up to [topK] of the most similar documents an implementation can
+  /// find for [query], best first.
+  ///
+  /// How exact that is depends on the implementation. [InMemoryVectorStore]
+  /// compares against every stored document and so returns the true top [topK];
+  /// a store built on an approximate index may return a very good answer
+  /// rather than the exact one, which is the trade it exists to make.
   ///
   /// [minScore] drops results whose score is below the given value.
-  /// [where] restricts the search to documents for which it returns true;
-  /// it runs before scoring, so filtered documents cost no similarity
-  /// computation.
+  /// [where] restricts the search to documents for which it returns true.
+  /// Implementations should apply it before scoring where they can, so that
+  /// filtered documents cost no similarity computation; [InMemoryVectorStore]
+  /// does.
   ///
   /// Returns an empty list when the store is empty. Throws an
   /// [ArgumentError] when the store is not empty and [query] does not have

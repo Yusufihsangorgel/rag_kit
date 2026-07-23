@@ -79,6 +79,23 @@ void main() {
       },
     );
 
+    test(
+      'a chunk stays findable in a set after the caller mutates the map',
+      () {
+        // hashCode reads the metadata, so aliasing the caller's map would let a
+        // chunk silently fall out of any Set or Map holding it.
+        final passed = <String, Object?>{'page': 1};
+        final chunk = chunkOf('x', metadata: passed);
+        final set = {chunk};
+
+        passed['page'] = 2;
+
+        expect(set.contains(chunk), isTrue);
+        expect(chunk.metadata, {'page': 1});
+        expect(() => chunk.metadata['page'] = 3, throwsUnsupportedError);
+      },
+    );
+
     test('a set collapses chunks that cover the same range', () {
       final chunks = [
         chunkOf('hello', start: 0),

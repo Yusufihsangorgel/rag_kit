@@ -3,7 +3,7 @@ description: >-
   Pure-Dart RAG (retrieval-augmented generation): chunking, embeddings, vector
   search, and context building. Zero dependencies, bring your own embedding
   model.
-version: 0.3.0
+version: 0.3.1
 repository: https://github.com/Yusufihsangorgel/rag_kit
 topics:
   - rag

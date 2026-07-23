@@ -1,3 +1,15 @@
+## 0.3.1
+
+- Fix `InMemoryVectorStore` aliasing a document's `metadata` map instead of
+  copying it. Unlike `embedding`, which was already defensively copied,
+  `metadata` was stored as the exact map object handed to `upsert`, so
+  mutating that map afterwards, or mutating a document handed back by
+  `search` or `retrieve`, silently rewrote data already in the index. This
+  was reachable through `Retriever.addText` too, since it builds each
+  document's metadata before handing it to the store. `metadata` is now
+  copied into an unmodifiable map at insert time, so mutating a returned
+  document's metadata throws instead of silently corrupting the store.
+
 ## 0.3.0
 
 - Add a `label` callback to `buildContext`. Until now it joined only the raw

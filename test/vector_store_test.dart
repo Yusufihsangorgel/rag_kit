@@ -262,6 +262,38 @@ void main() {
       expect(stored[1], expected[1]);
     });
 
+    test('metadata is copied at upsert time, not aliased', () async {
+      final store = InMemoryVectorStore();
+      final original = <String, Object?>{'status': 'draft'};
+      await store.upsert([
+        doc('a', [1, 0], meta: original),
+      ]);
+
+      // Mutating the caller's map after upsert must not reach the store.
+      original['status'] = 'published';
+      original['secret'] = 'leaked';
+
+      final results = await store.search([1, 0]);
+      expect(results.single.document.metadata, {'status': 'draft'});
+    });
+
+    test('metadata returned from search is unmodifiable', () async {
+      final store = InMemoryVectorStore();
+      await store.upsert([
+        doc('a', [1, 0], meta: {'status': 'draft'}),
+      ]);
+
+      final results = await store.search([1, 0]);
+      expect(
+        () => results.single.document.metadata['status'] = 'hacked',
+        throwsUnsupportedError,
+      );
+
+      // The rejected mutation must not have reached the store either.
+      final again = await store.search([1, 0]);
+      expect(again.single.document.metadata, {'status': 'draft'});
+    });
+
     test('count, clear, and dimension lifecycle', () async {
       final store = InMemoryVectorStore();
       expect(store.dimension, isNull);

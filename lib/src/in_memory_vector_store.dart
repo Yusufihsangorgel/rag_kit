@@ -264,7 +264,13 @@ class InMemoryVectorStore extends VectorStore {
         id: document.id,
         text: document.text,
         embedding: vector,
-        metadata: document.metadata,
+        // Copied for the same reason embedding is: without it, the caller's
+        // map would alias the stored one, so mutating it later (or mutating
+        // a document handed back by search/retrieve, since that is this
+        // same instance) would silently rewrite data already in the store.
+        // Unmodifiable turns any such mutation attempt into an immediate
+        // error instead of a silent one.
+        metadata: Map<String, Object?>.unmodifiable(document.metadata),
       ),
       vector: vector,
       norm: _norm(vector),

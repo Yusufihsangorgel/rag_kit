@@ -11,14 +11,17 @@ Future<List<List<double>>> ollamaEmbedder(List<String> texts) async {
   final client = HttpClient();
   final out = <List<double>>[];
   for (final text in texts) {
-    final req =
-        await client.postUrl(Uri.parse('http://localhost:11434/api/embeddings'));
+    final req = await client.postUrl(
+      Uri.parse('http://localhost:11434/api/embeddings'),
+    );
     req.headers.contentType = ContentType.json;
     req.write(jsonEncode({'model': 'nomic-embed-text', 'prompt': text}));
     final resp = await req.close();
     final body = await resp.transform(utf8.decoder).join();
     final map = jsonDecode(body) as Map<String, dynamic>;
-    out.add((map['embedding'] as List).map((n) => (n as num).toDouble()).toList());
+    out.add(
+      (map['embedding'] as List).map((n) => (n as num).toDouble()).toList(),
+    );
   }
   client.close();
   return out;

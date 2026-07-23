@@ -9,10 +9,9 @@ class FixedEmbedder {
   final Map<String, List<double>> vectors;
 
   Future<List<List<double>>> call(List<String> texts) async => [
-        for (final text in texts)
-          vectors[text] ??
-              (throw StateError('no vector for "$text"')),
-      ];
+    for (final text in texts)
+      vectors[text] ?? (throw StateError('no vector for "$text"')),
+  ];
 }
 
 // All unit length, so cosine similarity is just the dot product.
@@ -53,30 +52,35 @@ Future<Retriever> _populated() async {
 }
 
 void main() {
-  test('plain retrieve returns the near-duplicates, diverse does not',
-      () async {
-    final retriever = await _populated();
+  test(
+    'plain retrieve returns the near-duplicates, diverse does not',
+    () async {
+      final retriever = await _populated();
 
-    final plain = await retriever.retrieve(_query, topK: 2);
-    expect(
-      plain.map((c) => c.document.text),
-      [_dupB, _dupA],
-      reason: 'similarity alone picks both copies',
-    );
+      final plain = await retriever.retrieve(_query, topK: 2);
+      expect(
+        plain.map((c) => c.document.text),
+        [_dupB, _dupA],
+        reason: 'similarity alone picks both copies',
+      );
 
-    final diverse = await retriever.retrieveDiverse(_query, topK: 2);
-    expect(
-      diverse.map((c) => c.document.text),
-      [_dupB, _distinct],
-      reason: 'the second slot goes to something that adds information',
-    );
-  });
+      final diverse = await retriever.retrieveDiverse(_query, topK: 2);
+      expect(
+        diverse.map((c) => c.document.text),
+        [_dupB, _distinct],
+        reason: 'the second slot goes to something that adds information',
+      );
+    },
+  );
 
   test('lambda 1.0 is pure relevance and matches retrieve', () async {
     final retriever = await _populated();
     final plain = await retriever.retrieve(_query, topK: 2);
-    final diverse =
-        await retriever.retrieveDiverse(_query, topK: 2, lambda: 1.0);
+    final diverse = await retriever.retrieveDiverse(
+      _query,
+      topK: 2,
+      lambda: 1.0,
+    );
     expect(
       diverse.map((c) => c.document.text),
       plain.map((c) => c.document.text),
@@ -85,8 +89,11 @@ void main() {
 
   test('lambda 0.0 is pure diversity', () async {
     final retriever = await _populated();
-    final diverse =
-        await retriever.retrieveDiverse(_query, topK: 2, lambda: 0.0);
+    final diverse = await retriever.retrieveDiverse(
+      _query,
+      topK: 2,
+      lambda: 0.0,
+    );
     expect(diverse.last.document.text, _distinct);
   });
 
@@ -105,13 +112,18 @@ void main() {
     expect(all.map((c) => c.document.text), plain.map((c) => c.document.text));
   });
 
-  test('a fetchK below topK is raised rather than starving the selection',
-      () async {
-    final retriever = await _populated();
-    final diverse =
-        await retriever.retrieveDiverse(_query, topK: 3, fetchK: 1);
-    expect(diverse, hasLength(3));
-  });
+  test(
+    'a fetchK below topK is raised rather than starving the selection',
+    () async {
+      final retriever = await _populated();
+      final diverse = await retriever.retrieveDiverse(
+        _query,
+        topK: 3,
+        fetchK: 1,
+      );
+      expect(diverse, hasLength(3));
+    },
+  );
 
   test('an empty store returns nothing', () async {
     final retriever = _retriever();
@@ -141,8 +153,11 @@ void main() {
     expect(plain, contains(_dupA));
     expect(plain, isNot(contains(_distinct)));
 
-    final diverse =
-        await retriever.buildContext(_query, topK: 2, diverse: true);
+    final diverse = await retriever.buildContext(
+      _query,
+      topK: 2,
+      diverse: true,
+    );
     expect(diverse, contains(_distinct));
     expect(diverse, isNot(contains(_dupA)));
   });

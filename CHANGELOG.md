@@ -1,3 +1,23 @@
+## 1.0.0
+
+The API is stable. This release makes no code changes; it freezes the surface
+after an adversarial pass that ran the package rather than reading it, and
+everything held.
+
+Verified by execution: re-adding text under the same `sourceId` removes the old
+chunks completely before storing the new ones; an embedder that returns the
+wrong number of vectors throws a `StateError`; retrieving from an empty store
+returns nothing rather than crashing; the `InMemoryVectorStore` round-trips
+through `toBytes`/`fromBytes` with metadata intact; a query whose dimension does
+not match the store, and a non-positive `topK`, both throw `ArgumentError`. A
+`Document` deliberately holds the embedding list you give it (documented: do not
+mutate it after handing it to a store), and the store copies on `upsert` and
+returns unmodifiable views, so the stored data is always isolated.
+
+Every public type is `final` (`Chunker`, `Embedder`, `VectorStore` stay
+implementable, since that is how you extend it), the barrel names what it
+exports, and there are no runtime dependencies — it is pure Dart.
+
 ## 0.5.1
 
 - Add `example/README.md`, which pub.dev renders on the package's Example tab

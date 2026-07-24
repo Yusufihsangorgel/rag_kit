@@ -1,3 +1,11 @@
+## 0.5.1
+
+- Add `example/README.md`, which pub.dev renders on the package's Example tab
+  (it was empty before). It walks through `rag_kit_example.dart` end to end —
+  index two sources, retrieve, scope a query to one source with a metadata
+  filter, and build a prompt-ready context — with the real output, and points
+  at `semantic_demo.dart` for the model-backed version. Docs only.
+
 ## 0.5.0
 
 - Fix a hazard that 0.4.0 introduced. Giving `Chunk` value equality made

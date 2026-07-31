@@ -1,3 +1,24 @@
+## 1.0.1
+
+- **Fix a rejected re-index deleting the source it was replacing.**
+  `Retriever.addText` removed a source's stored chunks before writing the new
+  ones. The removal was placed after the embedder call so that an embedder
+  failure could not destroy anything, but the write itself can also fail:
+  swap in an embedder of a different dimension and `VectorStore.upsert`
+  throws, leaving the old chunks deleted and the new ones never stored. That
+  is precisely the case where the loss costs most — a user part-way through
+  re-indexing a corpus under a new model, told by the code comment that
+  "a failed re-add never destroys existing data".
+
+  The write now comes first. Chunk ids are positional, so upserting replaces
+  the chunks the new version still has, and a second pass removes only the
+  tail a shorter version leaves behind. A re-add that the store rejects now
+  changes nothing.
+
+  Two regression tests cover it: a rejected re-add keeps the stored text
+  retrievable, and a source re-added with fewer chunks drops its tail. The
+  first fails against the old ordering.
+
 ## 1.0.0
 
 The API is stable. This release makes no code changes; it freezes the surface

@@ -61,11 +61,6 @@ final class Retriever {
         '${chunks.length} texts.',
       );
     }
-    // Remove chunks of a previous version of this source only after the
-    // embedder succeeded, so a failed re-add never destroys existing data.
-    await store.removeWhere(
-      (document) => document.metadata['sourceId'] == source,
-    );
     final documents = <Document>[
       for (var i = 0; i < chunks.length; i++)
         Document(
@@ -82,7 +77,20 @@ final class Retriever {
           },
         ),
     ];
+    // Write before deleting, so a re-add that fails leaves the stored version
+    // intact. Ids are positional, so this replaces the chunks the new version
+    // still has; deleting first would drop the old text and then, if the store
+    // rejected the write, leave the source gone. The store does reject: an
+    // embedder swapped for one of a different dimension makes [VectorStore
+    // .upsert] throw, and that is the case where losing the source hurts
+    // most, since the user is midway through re-indexing everything.
     await store.upsert(documents);
+    // A shorter new version leaves the tail of the old one behind.
+    await store.removeWhere(
+      (document) =>
+          document.metadata['sourceId'] == source &&
+          (document.metadata['chunkIndex']! as int) >= chunks.length,
+    );
   }
 
   /// Embeds [query] and returns the most similar stored chunks, best first.

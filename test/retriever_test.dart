@@ -363,5 +363,65 @@ void main() {
         throwsArgumentError,
       );
     });
+
+    test('keeps the stored version when the re-add is rejected', () async {
+      // Re-indexing used to delete the old chunks first and write the new ones
+      // second. Swapping the embedder for one of another dimension makes the
+      // store reject the write, so the source was deleted and never replaced —
+      // in exactly the situation where it hurts most, a user midway through
+      // re-indexing a corpus with a new model.
+      var dimension = 3;
+      final store = InMemoryVectorStore();
+      final retriever = Retriever(
+        embedder: (texts) async => [
+          for (final _ in texts) List<double>.filled(dimension, 0.5),
+        ],
+        store: store,
+        chunker: Chunker.paragraphs(),
+      );
+      await retriever.addText('first source', sourceId: 'a');
+      await retriever.addText('second source', sourceId: 'b');
+      expect(await store.count(), 2);
+
+      dimension = 4;
+      await expectLater(
+        retriever.addText('first source, again', sourceId: 'a'),
+        throwsArgumentError,
+      );
+      expect(
+        await store.count(),
+        2,
+        reason: 'a rejected re-add must not remove what was already stored',
+      );
+      final kept = await store.search(List<double>.filled(3, 0.5), topK: 5);
+      expect(
+        kept.map((c) => c.document.text),
+        contains('first source'),
+        reason: 'the original text must still be retrievable',
+      );
+    });
+
+    test(
+      'drops the tail when a source is re-added with fewer chunks',
+      () async {
+        final store = InMemoryVectorStore();
+        final retriever = Retriever(
+          embedder: (texts) async => [
+            for (final _ in texts) List<double>.filled(3, 0.5),
+          ],
+          store: store,
+          chunker: Chunker.paragraphs(),
+        );
+        await retriever.addText('one\n\ntwo\n\nthree', sourceId: 'a');
+        expect(await store.count(), 3);
+
+        await retriever.addText('only one now', sourceId: 'a');
+        expect(
+          await store.count(),
+          1,
+          reason: 'chunks past the end of the new version must be removed',
+        );
+      },
+    );
   });
 }

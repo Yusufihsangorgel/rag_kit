@@ -44,6 +44,20 @@ abstract class Chunker {
   ///
   /// Throws an [ArgumentError] if [maxChars] is less than 1, [overlap] is
   /// negative, or [overlap] is not smaller than [maxChars].
+  ///
+  /// [maxChars] counts characters, while an embedding model's limit is in
+  /// tokens, and nothing here converts between the two. The ratio is not a
+  /// constant: English prose runs near four characters per token, code and
+  /// identifiers lower, and Chinese, Japanese, Korean, Arabic and Hebrew can
+  /// approach one. A chunk that comes out over the model's limit is truncated
+  /// by the model, not rejected by it — the embedding still arrives, computed
+  /// from part of the text, and search quality drops with nothing raised to
+  /// explain it.
+  ///
+  /// So pick [maxChars] against your own corpus rather than by copying the
+  /// model's token limit into it. If a token count matters exactly, measure a
+  /// sample with the tokenizer you actually use and set [maxChars] from what
+  /// you see; the number that is safe for English will not be safe for CJK.
   factory Chunker.fixed({int maxChars = 1000, int overlap = 200}) =>
       _FixedChunker(maxChars: maxChars, overlap: overlap);
 

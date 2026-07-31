@@ -1,3 +1,14 @@
+## 1.0.2
+
+- Say plainly that `Chunker.fixed` counts characters while an embedding model
+  limits tokens, and that nothing converts between them. The ratio is not a
+  constant — English prose runs near four characters per token, CJK can
+  approach one — and a chunk over the limit is truncated by the model rather
+  than rejected: the embedding still arrives, computed from part of the text,
+  and retrieval quality drops with nothing raised to explain it. Anyone who
+  copied their model's token limit into `maxChars` was reading the parameter
+  as something it is not. Documentation only.
+
 ## 1.0.1
 
 - **Fix a rejected re-index deleting the source it was replacing.**

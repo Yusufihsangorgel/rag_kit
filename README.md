@@ -271,6 +271,28 @@ The magic bytes version the format: a future incompatible layout will use
 a different magic and this release will reject it cleanly. Document
 metadata must be JSON-encodable for saving.
 
+## Composing with other packages
+
+`Chunker` and `VectorStore` are interfaces so the two parts most worth
+swapping can be swapped. `rag_kit` itself stays dependency-free; the pieces
+below live in examples, so nothing here reaches your `pubspec` unless you want
+it to.
+
+| Instead of | Use | Why | Where it runs |
+| --- | --- | --- | --- |
+| `InMemoryVectorStore` | [`vector_kit`](https://pub.dev/packages/vector_kit) | Rows packed into one aligned `Float32List` with cached norms, read through `Float32x4` on the VM: one SIMD dot product per row instead of a scalar loop | Everywhere — pure Dart, no dependencies |
+| `Chunker.fixed` | [`hf_tokenizers`](https://pub.dev/packages/hf_tokenizers) | Cuts on **tokens**, the unit the embedding model actually counts, instead of characters | Linux, macOS, Windows (it is FFI) |
+
+`example/with_vector_kit.dart` is a complete `VectorStore` on top of
+`VectorMatrix.topKCosine`, filters and all. The token chunker lives in
+`hf_tokenizers`' own examples as `example/rag_chunking.dart`, so the FFI
+dependency stays on that side.
+
+Why the second row matters, measured on one mixed-script paragraph with a
+24-token budget: the chunks it produced ran between **2.2 and 4.8 characters
+per token**. No single `maxChars` is correct across that range, which is what
+the note on `Chunker.fixed` has always said — this is the way to stop guessing.
+
 ## Limits
 
 - Exact search only. Practical up to roughly 100k chunks; see above.

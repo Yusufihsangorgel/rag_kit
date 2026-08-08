@@ -3,7 +3,7 @@ description: >-
   Pure-Dart RAG (retrieval-augmented generation): chunking, embeddings, vector
   search, and context building. Zero dependencies, bring your own embedding
   model.
-version: 1.0.2
+version: 1.0.3
 repository: https://github.com/Yusufihsangorgel/rag_kit
 topics:
   - rag
@@ -22,5 +22,8 @@ environment:
   sdk: ^3.8.0
 
 dev_dependencies:
+  # example/with_vector_kit.dart only. Pure Dart, no runtime dependencies,
+  # so it costs consumers nothing.
+  vector_kit: ^1.1.0
   lints: ^6.0.0
   test: ^1.25.0

@@ -1,3 +1,21 @@
+## 1.0.3
+
+- **Show how to swap the two parts that are worth swapping.** `Chunker` and
+  `VectorStore` have been interfaces since the start, but nothing demonstrated
+  what to put behind them, so the built-ins read as the only option.
+  `example/with_vector_kit.dart` is a complete `VectorStore` over
+  `vector_kit`'s `VectorMatrix.topKCosine` — upsert, filtered search, minScore,
+  removeWhere — and the README now points at it along with the token chunker
+  that lives in `hf_tokenizers`' examples.
+- No runtime dependency was added and none will be: `vector_kit` is a dev
+  dependency used by that one example file. rag_kit still resolves with
+  nothing behind it.
+- The README says what the token chunker buys, with a number rather than an
+  argument. On one mixed English-and-Japanese paragraph under a 24-token
+  budget, the chunks ran between 2.2 and 4.8 characters per token — no single
+  `maxChars` is right across that spread, which is what the note on
+  `Chunker.fixed` has always claimed without showing.
+
 ## 1.0.2
 
 - Say plainly that `Chunker.fixed` counts characters while an embedding model

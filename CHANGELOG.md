@@ -1,3 +1,10 @@
+## 1.0.4
+
+- The retrieval section shows what diversity does to a result set, drawn by
+  `tool/diverse_retrieval_figure.dart` from a real query. One contrastive
+  sentence was reworded on the way past the writing threshold. Docs and tooling
+  only.
+
 ## 1.0.3
 
 - **Show how to swap the two parts that are worth swapping.** `Chunker` and

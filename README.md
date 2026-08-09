@@ -9,6 +9,37 @@ search, and context building. Bring your own embedding model.
 local embeddings, and the query "how do I take time off?" is answered with the
 paragraph about accruing paid leave, which never contains the words "time off"](https://raw.githubusercontent.com/Yusufihsangorgel/rag_kit/main/doc/demo.gif)
 
+## Why this instead of what you already have
+
+**Instead of wiring it yourself.** Splitting text, batching an embedder, and
+scoring cosine similarity are each short enough to hand-write. The selection
+step is not. `Retriever.retrieveDiverse` (`lib/src/retriever.dart:148`) pulls a
+candidate pool four times `topK` and runs maximal marginal relevance over it
+(`lib/src/retriever.dart:193`), so three copies of the same paragraph do not
+take three of your five context slots.
+
+**Instead of `langchain`.** langchain_dart is the large, maintained incumbent
+here, and its `MemoryVectorStore` does filter by metadata before scoring. Then
+it sorts by similarity and takes `k` (`lib/src/vector_stores/memory.dart:169`),
+and that is the whole selection. Grep the package for `mmr`, `maximal marginal`,
+or `diversity`: no hits anywhere, README included, so near-duplicate results are
+still yours to deal with. It also brings six runtime dependencies
+(`langchain_core`, `uuid`, `collection`, `crypto`, `characters`, `meta`).
+rag_kit has none.
+
+**Reach for it when**
+
+- You want retrieval on-device or in a Dart backend without adding a vector
+  database to the deployment.
+- Your sources repeat themselves, so the top matches keep being the same
+  sentence three times over.
+- You want the pipeline testable against a fake embedder instead of a live API
+  key.
+
+Skip it if your vectors already live in pgvector or a hosted index, because then
+the store is the piece you have and what is left here is a chunker and one
+selection loop.
+
 pub.dev has embedding API clients and it has vector database clients, but
 the wiring between them is left to you every time: split documents into
 chunks, embed them in batches, store the vectors, search them, and paste

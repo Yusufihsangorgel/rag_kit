@@ -66,6 +66,15 @@ are near-copies of each other, so the context window pays for one fact three
 times while the fact that would have answered the question sits just below the
 cut.
 
+![Side by side comparison of retrieve and retrieveDiverse on the same query: the left column picks three near-identical handbook paragraphs about requesting leave in the HR portal, closest pair 0.90; the right column keeps one of them and adds the two-week notice window and the carry-over rule, closest pair 0.31](https://raw.githubusercontent.com/Yusufihsangorgel/rag_kit/main/doc/diverse-retrieval.png)
+
+Both columns come from one call each: same query, same handbook, same `topK`.
+The paragraph carrying the two-week notice rule ranks fourth by similarity,
+which is why the left column never reaches it, and the number under each column
+is the highest cosine between two of that column's own picks.
+`dart run tool/diverse_retrieval_figure.dart` measures the run and draws it, and
+refuses to write the file when the claim stops holding.
+
 `retrieveDiverse` runs maximal marginal relevance over a larger candidate pool,
 choosing each next chunk for how relevant it is minus how much it repeats what
 is already chosen:
@@ -223,7 +232,7 @@ Top-k selection uses a bounded min-heap rather than sorting all
 candidates. Searches support `topK`, `minScore`, and a metadata `where`
 filter.
 
-Search is exact, not approximate: every stored vector is scored on every
+Search is exact rather than approximate: every stored vector is scored on every
 query. That is the honest trade-off of this release. Exact search is
 deterministic and has no index build cost. Measured medians with 768-dim
 embeddings and `topK: 5` on an Apple M-series laptop: about 5 ms per

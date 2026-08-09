@@ -14,8 +14,13 @@ topics:
 
 screenshots:
   - description: >-
-      One Retriever ties a chunker, your embedder and a vector store together, s
-      hared by the indexing path and the query path.
+      Same query and topK through retrieve and retrieveDiverse: three
+      near-identical paragraphs on the left at 0.90 closest pair, three distinct
+      ones on the right at 0.31.
+    path: doc/diverse-retrieval.png
+  - description: >-
+      One Retriever ties a chunker, your embedder and a vector store together,
+      shared by the indexing path and the query path.
     path: doc/architecture.png
 
 environment:

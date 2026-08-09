@@ -46,7 +46,7 @@ Future<void> main() async {
   );
 
   // Scope a query with a metadata filter: only chunks whose document metadata
-  // matches are scored, so you can restrict to one source, language or tenant.
+  // matches are scored. Restrict to one source, language or tenant.
   final scoped = await retriever.retrieve(
     'how do I request leave?',
     where: (doc) => doc.metadata['sourceId'] == 'handbook',
@@ -55,7 +55,7 @@ Future<void> main() async {
 ```
 
 `retrieve` and `buildContext` both take `minScore` and a `where` predicate,
-forwarded to the store, so filtering costs no similarity computation on the
+forwarded to the store: filtering costs no similarity computation on the
 documents it excludes.
 
 ## Diverse retrieval
@@ -87,8 +87,8 @@ final context = await retriever.buildContext(
 
 `fetchK` is the pool pulled by similarity before the selection runs, four times
 `topK` by default, since the selection can only choose among what it is handed.
-Results keep their query-similarity score and come back most relevant first, so
-they read like `retrieve`'s. `minScore` and `where` work the same.
+Results keep their query-similarity score and come back most relevant first,
+the same as `retrieve`'s. `minScore` and `where` work the same.
 
 ## Citing sources
 
@@ -107,7 +107,7 @@ final context = await retriever.buildContext(
 // You request leave through the HR portal...
 ```
 
-The label receives the `ScoredChunk`, so it can read `document.id`,
+The label receives the `ScoredChunk` and can read `document.id`,
 `document.metadata`, or the `score`. Ask the model to keep the markers in its
 answer and you get citations back.
 
@@ -210,8 +210,8 @@ highlight retrieved passages in the original document.
 | `Chunker.sentences(maxChars: 1000, overlap: 1)` | Packs whole sentences per chunk; overlap is counted in sentences. |
 
 The sentence splitter is intentionally simple: it splits on `.`, `!`, or
-`?` followed by whitespace and knows nothing about abbreviations, so
-"e.g. this" splits after "e.g.". If your text is dense with abbreviations,
+`?` followed by whitespace and knows nothing about abbreviations, which
+makes "e.g. this" split after "e.g.". If your text is dense with abbreviations,
 use `Chunker.paragraphs` or implement your own `Chunker`.
 
 ## Vector store
@@ -231,8 +231,8 @@ query at 10k chunks, about 50 ms at 100k. Beyond that scale you want an
 ANN index, which is on the roadmap below.
 
 The `VectorStore` interface is asynchronous and small (`upsert`, `search`,
-`removeWhere`, `count`, `clear`), so a database-backed implementation can
-be dropped in without touching the rest of the pipeline.
+`removeWhere`, `count`, `clear`). A database-backed implementation can be
+dropped in without touching the rest of the pipeline.
 
 ## Persistence and the web
 
@@ -265,8 +265,8 @@ per document:
   dimension x 4 bytes                embedding as float32
 ```
 
-Corrupt or truncated files fail with a `FormatException`; there is no
-checksum, so single flipped bits inside embedding data are not detected.
+Corrupt or truncated files fail with a `FormatException`. There is no
+checksum: single flipped bits inside embedding data are not detected.
 The magic bytes version the format: a future incompatible layout will use
 a different magic and this release will reject it cleanly. Document
 metadata must be JSON-encodable for saving.
@@ -275,12 +275,12 @@ metadata must be JSON-encodable for saving.
 
 `Chunker` and `VectorStore` are interfaces so the two parts most worth
 swapping can be swapped. `rag_kit` itself stays dependency-free; the pieces
-below live in examples, so nothing here reaches your `pubspec` unless you want
+below live in examples, and nothing here reaches your `pubspec` unless you want
 it to.
 
 | Instead of | Use | Why | Where it runs |
 | --- | --- | --- | --- |
-| `InMemoryVectorStore` | [`vector_kit`](https://pub.dev/packages/vector_kit) | Rows packed into one aligned `Float32List` with cached norms, read through `Float32x4` on the VM: one SIMD dot product per row instead of a scalar loop | Everywhere — pure Dart, no dependencies |
+| `InMemoryVectorStore` | [`vector_kit`](https://pub.dev/packages/vector_kit) | Rows packed into one aligned `Float32List` with cached norms, read through `Float32x4` on the VM: one SIMD dot product per row instead of a scalar loop | Everywhere: pure Dart, no dependencies |
 | `Chunker.fixed` | [`hf_tokenizers`](https://pub.dev/packages/hf_tokenizers) | Cuts on **tokens**, the unit the embedding model actually counts, instead of characters | Linux, macOS, Windows (it is FFI) |
 
 `example/with_vector_kit.dart` is a complete `VectorStore` on top of
@@ -291,7 +291,7 @@ dependency stays on that side.
 Why the second row matters, measured on one mixed-script paragraph with a
 24-token budget: the chunks it produced ran between **2.2 and 4.8 characters
 per token**. No single `maxChars` is correct across that range, which is what
-the note on `Chunker.fixed` has always said — this is the way to stop guessing.
+the note on `Chunker.fixed` has always said; this is the way to stop guessing.
 
 ## Limits
 

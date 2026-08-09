@@ -2,17 +2,17 @@
 
 - **Show how to swap the two parts that are worth swapping.** `Chunker` and
   `VectorStore` have been interfaces since the start, but nothing demonstrated
-  what to put behind them, so the built-ins read as the only option.
+  what to put behind them, and the built-ins read as the only option.
   `example/with_vector_kit.dart` is a complete `VectorStore` over
-  `vector_kit`'s `VectorMatrix.topKCosine` — upsert, filtered search, minScore,
-  removeWhere — and the README now points at it along with the token chunker
+  `vector_kit`'s `VectorMatrix.topKCosine` (upsert, filtered search, minScore,
+  removeWhere), and the README now points at it along with the token chunker
   that lives in `hf_tokenizers`' examples.
 - No runtime dependency was added and none will be: `vector_kit` is a dev
   dependency used by that one example file. rag_kit still resolves with
   nothing behind it.
 - The README says what the token chunker buys, with a number rather than an
   argument. On one mixed English-and-Japanese paragraph under a 24-token
-  budget, the chunks ran between 2.2 and 4.8 characters per token — no single
+  budget, the chunks ran between 2.2 and 4.8 characters per token; no single
   `maxChars` is right across that spread, which is what the note on
   `Chunker.fixed` has always claimed without showing.
 
@@ -20,8 +20,8 @@
 
 - Say plainly that `Chunker.fixed` counts characters while an embedding model
   limits tokens, and that nothing converts between them. The ratio is not a
-  constant — English prose runs near four characters per token, CJK can
-  approach one — and a chunk over the limit is truncated by the model rather
+  constant (English prose runs near four characters per token, CJK can
+  approach one), and a chunk over the limit is truncated by the model rather
   than rejected: the embedding still arrives, computed from part of the text,
   and retrieval quality drops with nothing raised to explain it. Anyone who
   copied their model's token limit into `maxChars` was reading the parameter
@@ -35,7 +35,7 @@
   failure could not destroy anything, but the write itself can also fail:
   swap in an embedder of a different dimension and `VectorStore.upsert`
   throws, leaving the old chunks deleted and the new ones never stored. That
-  is precisely the case where the loss costs most — a user part-way through
+  is precisely the case where the loss costs most: a user part-way through
   re-indexing a corpus under a new model, told by the code comment that
   "a failed re-add never destroys existing data".
 
@@ -62,18 +62,18 @@ through `toBytes`/`fromBytes` with metadata intact; a query whose dimension does
 not match the store, and a non-positive `topK`, both throw `ArgumentError`. A
 `Document` deliberately holds the embedding list you give it (documented: do not
 mutate it after handing it to a store), and the store copies on `upsert` and
-returns unmodifiable views, so the stored data is always isolated.
+returns unmodifiable views, which keeps the stored data isolated.
 
 Every public type is `final` (`Chunker`, `Embedder`, `VectorStore` stay
 implementable, since that is how you extend it), the barrel names what it
-exports, and there are no runtime dependencies — it is pure Dart.
+exports, and there are no runtime dependencies; it is pure Dart.
 
 ## 0.5.1
 
 - Add `example/README.md`, which pub.dev renders on the package's Example tab
-  (it was empty before). It walks through `rag_kit_example.dart` end to end —
-  index two sources, retrieve, scope a query to one source with a metadata
-  filter, and build a prompt-ready context — with the real output, and points
+  (it was empty before). It walks through `rag_kit_example.dart` end to end
+  (index two sources, retrieve, scope a query to one source with a metadata
+  filter, and build a prompt-ready context) with the real output, and points
   at `semantic_demo.dart` for the model-backed version. Docs only.
 
 ## 0.5.0
@@ -85,7 +85,7 @@ exports, and there are no runtime dependencies — it is pure Dart.
   and `set.contains(chunk)` is false for that very instance, with no error.
   This is the same aliasing class that 0.3.1 fixed inside the store, arriving
   through a different door. `Chunk` now copies metadata into an unmodifiable
-  map, so mutating the map you passed in cannot reach the chunk, and mutating
+  map: mutating the map you passed in cannot reach the chunk, and mutating
   the map you get back throws instead of corrupting a hash. An empty map still
   costs nothing.
 - Mark the five leaf classes `final`: `Chunk`, `Document`, `ScoredChunk`,
@@ -111,20 +111,21 @@ changes how sets and maps behave for anyone already using them.
 
 - `Chunk` now has `==` and `hashCode`, over its text, its range, and its
   metadata. Until now two chunks covering exactly the same span of the same
-  source were different objects, so `chunks.toSet()` never collapsed the
+  source were different objects. `chunks.toSet()` never collapsed the
   duplicates that overlapping windows produce, and a test could not compare a
   chunker's output against the chunks it expected. Metadata is compared entry
-  by entry and each value with its own `==`, so a `List` or `Map` stored as a
-  metadata value compares by identity; the hash is order-independent, so two
-  equal maps built in a different order still land in the same bucket.
+  by entry and each value with its own `==`, which makes a `List` or `Map`
+  stored as a metadata value compare by identity; the hash is
+  order-independent, and two equal maps built in a different order still land
+  in the same bucket.
 - `Document` and `ScoredChunk` deliberately keep identity equality, and now
   say so in their documentation. A store keeps embeddings as float32, so a
   document read back has slightly different components than the one that was
   written while being the same document: value equality would report those two
   as different and would be wrong more often than it was useful. A document is
   identified by its `id`, which is what the store already deduplicates on.
-- Name every export explicitly. The library re-exported whole source files,
-  so anything that became public inside one would have joined the API by
+- Name every export explicitly. The library re-exported whole source files;
+  anything that became public inside one would have joined the API by
   accident, which matters much more once the API is frozen. The exported set
   is unchanged: `Chunk`, `Chunker`, `Document`, `Embedder`,
   `InMemoryVectorStore`, `Retriever`, `ScoredChunk`, `VectorStore`.
@@ -138,13 +139,13 @@ changes how sets and maps behave for anyone already using them.
   `search` or `retrieve`, silently rewrote data already in the index. This
   was reachable through `Retriever.addText` too, since it builds each
   document's metadata before handing it to the store. `metadata` is now
-  copied into an unmodifiable map at insert time, so mutating a returned
+  copied into an unmodifiable map at insert time; mutating a returned
   document's metadata throws instead of silently corrupting the store.
 
 ## 0.3.0
 
 - Add a `label` callback to `buildContext`. Until now it joined only the raw
-  chunk texts, so the model got the passages with no way to say which document
+  chunk texts. The model got the passages with no way to say which document
   each came from. Pass `label` to prefix every chunk with a source marker,
   for example `label: (c) => '[${c.document.metadata['sourceId']}]'`; it counts
   against `maxChars` like the rest of the chunk. Left off, the output is
@@ -153,21 +154,21 @@ changes how sets and maps behave for anyone already using them.
 ## 0.2.2
 
 - Shorten the screenshot description. pub.dev accepts up to 200 characters but
-  scores only those under 160, so the previous release published cleanly and
+  scores only those under 160. The previous release published cleanly and
   quietly gave up the documentation points it was meant to earn.
 
 ## 0.2.1
 
 - Declare the diagram in `pubspec.yaml` so pub.dev renders it on the package
   page. It was already in the repository and the README, but pub.dev shows only
-  what the `screenshots:` field points at, so the page opened with prose where
+  what the `screenshots:` field points at. The page opened with prose where
   the picture should have been.
 
 ## 0.2.0
 
 - Add `Retriever.retrieveDiverse`, maximal marginal relevance over a larger
   candidate pool. Similarity alone returns near-duplicates when a source
-  repeats itself, so the context window pays for one fact several times while
+  repeats itself: the context window pays for one fact several times while
   the one that answers the question falls below the cut; this picks each next
   chunk for its relevance minus how much it repeats what is already picked.
   `lambda` runs from pure relevance (1.0, identical to `retrieve`) to pure

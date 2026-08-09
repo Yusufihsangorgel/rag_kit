@@ -5,6 +5,10 @@
 Retrieval-augmented generation for Dart: chunking, embeddings, vector
 search, and context building. Bring your own embedding model.
 
+![A terminal run of the semantic search example: a handbook is indexed with
+local embeddings, and the query "how do I take time off?" is answered with the
+paragraph about accruing paid leave, which never contains the words "time off"](https://raw.githubusercontent.com/Yusufihsangorgel/rag_kit/main/doc/demo.gif)
+
 pub.dev has embedding API clients and it has vector database clients, but
 the wiring between them is left to you every time: split documents into
 chunks, embed them in batches, store the vectors, search them, and paste

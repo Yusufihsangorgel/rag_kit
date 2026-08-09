@@ -3,7 +3,7 @@ description: >-
   Pure-Dart RAG (retrieval-augmented generation): chunking, embeddings, vector
   search, and context building. Zero dependencies, bring your own embedding
   model.
-version: 1.0.4
+version: 1.0.5
 repository: https://github.com/Yusufihsangorgel/rag_kit
 topics:
   - rag
@@ -13,6 +13,10 @@ topics:
   - nlp
 
 screenshots:
+  - description: >-
+      A handbook indexed with local embeddings answers a question whose wording
+      never appears in the text.
+    path: doc/demo.gif
   - description: >-
       Same query and topK through retrieve and retrieveDiverse: three
       near-identical paragraphs on the left at 0.90 closest pair, three distinct
